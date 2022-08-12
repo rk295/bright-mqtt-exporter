@@ -1,5 +1,38 @@
 package main
 
+// This file defines the Go structs for parsing an MQTT message received from
+// the Glow ethernet dongle. This is for messages sent to /your/ MQTT broker
+// it will not work for messages sent to Glow's own broker, they are in the
+// more verbose format.
+//
+// Example message:
+//
+// {
+//     "gasmeter": {
+//         "timestamp": "2022-08-12T09:50:59 +00",
+//         "energy": {
+//             "export": "0.00",
+//             "units": "kWh",
+//             "import": {
+//                 "cummulative": "12458.51",
+//                 "day": "5.42",
+//                 "week": "29.76",
+//                 "month": "75.89"
+//             }
+//         },
+//         "power": "0.00",
+//         "mprn": "111111111",
+//         "price": {
+//             "unitrate": "0.07",
+//             "standingcharge": "0.27"
+//         }
+//     }
+// }
+//
+// It makes an attempt to parse the timestamp and any float fields up into
+// native Go types.
+//
+
 import (
 	"strconv"
 	"time"
