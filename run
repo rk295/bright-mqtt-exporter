@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+envFile=".env"
+
+if [[ -e "$envFile" ]]; then
+    source .env
+fi
+
+cd cmd/bright-mqtt-exporter
+go run *.go

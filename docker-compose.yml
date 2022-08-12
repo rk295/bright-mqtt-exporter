@@ -1,0 +1,15 @@
+version: "2"
+services: 
+  bright-mqtt-exporter:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: bright-mqtt-exporter
+    restart: always
+    environment:
+      - MQTT_HOST=${MQTT_HOST}
+      - MQTT_USER=${MQTT_USER}
+      - MQTT_PASS=${MQTT_PASS}
+      - MQTT_TOPIC=${MQTT_TOPIC}
+    ports:
+      - 9997:9999

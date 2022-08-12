@@ -1,0 +1,4 @@
+export MQTT_HOST=""
+export MQTT_USER=""
+export MQTT_PASS=""
+export MQTT_TOPIC=""
