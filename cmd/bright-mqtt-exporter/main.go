@@ -150,7 +150,7 @@ func (d Data) newMessage(c mqtt.Client, m mqtt.Message) {
 			log.Error(err)
 			return
 		}
-	
+
 		err := d.updateCurrent(t.Gasmeter, gasMetricName)
 		if err != nil {
 			log.Error(err)
@@ -174,9 +174,8 @@ func (d Data) updateCurrent(m Meter, kind string) error {
 		return fmt.Errorf("unknown meter kind %s", kind)
 	}
 
-	
-	d.UnitRate[kind] = float64(m.Price.Unitrate) 				// Unit rate update
-	d.StandingCharge[kind] = float64(m.Price.Standingcharge) 	// Standing charge update
+	d.UnitRate[kind] = float64(m.Price.Unitrate)             // Unit rate update
+	d.StandingCharge[kind] = float64(m.Price.Standingcharge) // Standing charge update
 
 	return nil
 }
