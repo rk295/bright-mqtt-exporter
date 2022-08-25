@@ -139,7 +139,7 @@ func (d Data) newMessage(c mqtt.Client, m mqtt.Message) {
 			return
 		}
 
-		err := d.updateCurrent(t.Electricitymeter, electricityMetricName)
+		err := d.updateElectricity(t.Electricitymeter, electricityMetricName)
 		if err != nil {
 			log.Error(err)
 		}
@@ -151,7 +151,7 @@ func (d Data) newMessage(c mqtt.Client, m mqtt.Message) {
 			return
 		}
 
-		err := d.updateCurrent(t.Gasmeter, gasMetricName)
+		err := d.updateGate(t.Gasmeter, gasMetricName)
 		if err != nil {
 			log.Error(err)
 		}
@@ -161,21 +161,24 @@ func (d Data) newMessage(c mqtt.Client, m mqtt.Message) {
 
 }
 
-func (d Data) updateCurrent(m Meter, kind string) error {
+func (d Data) updateGate(m GasMeter, kind string) error {
 
-	switch kind {
-	case electricityMetricName:
-		log.Debugf("mqtt: updating %s with %v", electricityMetricName, m.Power)
-		d.Usage[kind] = float64(m.Power)
-	case gasMetricName:
-		log.Debugf("mqtt: updating %s with %v", gasMetricName, m.Energy.Import.Cummulative)
-		d.Usage[kind] = float64(m.Energy.Import.Cummulative)
-	default:
-		return fmt.Errorf("unknown meter kind %s", kind)
-	}
+	log.Debugf("mqtt: updating %s with %v", gasMetricName, m.Energy.Import.Cumulative)
+	d.Usage[kind] = float64(m.Energy.Import.Cumulative)
 
-	d.UnitRate[kind] = float64(m.Price.Unitrate)             // Unit rate update
-	d.StandingCharge[kind] = float64(m.Price.Standingcharge) // Standing charge update
+	d.UnitRate[kind] = m.Energy.Import.Price.Unitrate             // Unit rate update
+	d.StandingCharge[kind] = m.Energy.Import.Price.StandingCharge // Standing charge update
+
+	return nil
+}
+
+func (d Data) updateElectricity(m ElectricityMeter, kind string) error {
+
+	log.Debugf("mqtt: updating %s with %v", electricityMetricName, m.Power.Value)
+	d.Usage[kind] = float64(m.Power.Value)
+
+	d.UnitRate[kind] = m.Energy.Import.Price.Unitrate             // Unit rate update
+	d.StandingCharge[kind] = m.Energy.Import.Price.StandingCharge // Standing charge update
 
 	return nil
 }

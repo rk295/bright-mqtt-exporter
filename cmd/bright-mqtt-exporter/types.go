@@ -5,104 +5,137 @@ package main
 // it will not work for messages sent to Glow's own broker, they are in the
 // more verbose format.
 //
-// Example message:
+// Example electricity meter message:
 //
 // {
+// 	"electricitymeter": {
+// 		"timestamp": "2022-08-25T06:16:59Z",
+// 		"energy": {
+// 			"export": {
+// 				"cumulative": 0,
+// 				"units": "kWh"
+// 			},
+// 			"import": {
+// 				"cumulative": 4896.645,
+// 				"day": 0.003,
+// 				"week": 0.035,
+// 				"month": 0.257,
+// 				"units": "kWh",
+// 				"mpan": "1012400931394",
+// 				"supplier": "British Gas",
+// 				"price": {
+// 					"unitrate": 0.2924,
+// 					"standingcharge": 0.3792
+// 				}
+// 			}
+// 		},
+// 		"power": {
+// 			"value": 0.481,
+// 			"units": "kW"
+// 		}
+// 	}
+// }
+//
+// Example gas meter message:
+
+// {
 //     "gasmeter": {
-//         "timestamp": "2022-08-12T09:50:59 +00",
+//         "timestamp": "2022-08-25T06:27:51Z",
 //         "energy": {
-//             "export": "0.00",
-//             "units": "kWh",
 //             "import": {
-//                 "cummulative": "12458.51",
-//                 "day": "5.42",
-//                 "week": "29.76",
-//                 "month": "75.89"
+//                 "cumulative": 12491.78,
+//                 "day": 0,
+//                 "week": 14.334,
+//                 "month": 109.153,
+//                 "units": "kWh",
+//                 "cumulativevol": 1107.678,
+//                 "cumulativevolunits": "m3",
+//                 "dayvol": 0,
+//                 "weekvol": 14.334,
+//                 "monthvol": 109.153,
+//                 "dayweekmonthvolunits": "kWh",
+//                 "mprn": "3342241002",
+//                 "supplier": "---",
+//                 "price": {
+//                     "unitrate": 0.07344,
+//                     "standingcharge": 0.2722
+//                 }
 //             }
-//         },
-//         "power": "0.00",
-//         "mprn": "111111111",
-//         "price": {
-//             "unitrate": "0.07",
-//             "standingcharge": "0.27"
 //         }
 //     }
 // }
 //
-// It makes an attempt to parse the timestamp and any float fields up into
-// native Go types.
-//
-
 import (
-	"strconv"
 	"time"
 )
 
-const (
-	brightTimeFormat = "2006-01-02T03:04:05 +00"
-)
-
-type BrightFloat64 float64
-
-func (b *BrightFloat64) UnmarshalJSON(data []byte) error {
-
-	i, err := strconv.ParseFloat(parseJSONString(data), 64)
-	if err != nil {
-		return err
-	}
-	*b = BrightFloat64(i)
-	return nil
-}
-
-type BrightTime time.Time
-
-func (t *BrightTime) UnmarshalJSON(data []byte) error {
-
-	parsedTime, err := time.Parse(brightTimeFormat, parseJSONString(data))
-	if err != nil {
-		return err
-	}
-	*t = BrightTime(parsedTime)
-	return nil
-}
-
-func parseJSONString(data []byte) string {
-	s := string(data)
-	return s[1 : len(s)-1] // Remove quotes
-}
-
 type BrightElectricitysMsg struct {
-	Electricitymeter Meter `json:"electricitymeter"`
+	Electricitymeter ElectricityMeter `json:"electricitymeter"`
 }
 
 type BrightGasMsg struct {
-	Gasmeter Meter `json:"gasmeter"`
+	Gasmeter GasMeter `json:"gasmeter"`
 }
 
-type Meter struct {
-	Timestamp BrightTime    `json:"timestamp"`
-	Energy    Energy        `json:"energy"`
-	Power     BrightFloat64 `json:"power"`
-	Mpan      string        `json:"mpan,omitempty"`
-	Mprn      string        `json:"mprn,omitempty"`
-	Supplier  string        `json:"supplier,omitempty"`
-	Price     Price         `json:"price"`
+type GasMeter struct {
+	Energy    GasEnergy `json:"energy"`
+	Timestamp time.Time `json:"timestamp"`
 }
 
-type Energy struct {
-	Export BrightFloat64 `json:"export"`
-	Units  string        `json:"units"`
-	Import Import        `json:"import"`
+type GasEnergy struct {
+	Import GasImport `json:"import"`
 }
 
-type Import struct {
-	Cummulative BrightFloat64 `json:"cummulative"`
-	Day         BrightFloat64 `json:"day"`
-	Week        BrightFloat64 `json:"week"`
-	Month       BrightFloat64 `json:"month"`
+type GasImport struct {
+	Cumulative           float64 `json:"cumulative"`
+	Day                  float64 `json:"day"`
+	Week                 float64 `json:"week"`
+	Month                float64 `json:"month"`
+	Units                string  `json:"units"`
+	Cumulativevol        float64 `json:"cumulativevol"`
+	Cumulativevolunits   string  `json:"cumulativevolunits"`
+	Dayvol               float64 `json:"dayvol"`
+	Weekvol              float64 `json:"weekvol"`
+	Monthvol             float64 `json:"monthvol"`
+	Dayweekmonthvolunits string  `json:"dayweekmonthvolunits"`
+	Mprn                 string  `json:"mprn"`
+	Supplier             string  `json:"supplier"`
+	Price                Price   `json:"price"`
+}
+
+type ElectricityMeter struct {
+	Energy    ElectricityEnergy `json:"energy"`
+	Power     Power             `json:"power"`
+	Timestamp time.Time         `json:"timestamp"`
+}
+
+type ElectricityEnergy struct {
+	Export ElectricityExport `json:"export"`
+	Import ElectricityImport `json:"import"`
+}
+
+type ElectricityImport struct {
+	Cumulative float64 `json:"cumulative"`
+	Day        float64 `json:"day"`
+	Month      float64 `json:"month"`
+	Mpan       string  `json:"mpan"`
+	Price      Price   `json:"price"`
+	Supplier   string  `json:"supplier"`
+	Units      string  `json:"units"`
+	Week       float64 `json:"week"`
+}
+
+type ElectricityExport struct {
+	Cummulative float64 `json:"cummulative"`
+	Units       string  `json:"units"`
+}
+
+type Power struct {
+	Value float64 `json:"value"`
+	Units string  `json:"units"`
 }
 
 type Price struct {
-	Unitrate       BrightFloat64 `json:"unitrate"`
-	Standingcharge BrightFloat64 `json:"standingcharge"`
+	StandingCharge float64 `json:"standingcharge"`
+	Unitrate       float64 `json:"unitrate"`
 }
