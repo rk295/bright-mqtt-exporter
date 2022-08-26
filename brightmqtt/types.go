@@ -1,4 +1,4 @@
-package main
+package brightmqtt
 
 // This file defines the Go structs for parsing an MQTT message received from
 // the Glow ethernet dongle. This is for messages sent to /your/ MQTT broker
@@ -69,11 +69,11 @@ import (
 	"time"
 )
 
-type BrightElectricitysMsg struct {
+type ElectricitysMsg struct {
 	Electricitymeter ElectricityMeter `json:"electricitymeter"`
 }
 
-type BrightGasMsg struct {
+type GasMsg struct {
 	Gasmeter GasMeter `json:"gasmeter"`
 }
 
