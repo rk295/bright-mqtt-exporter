@@ -13,6 +13,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
+
+	bright "github.com/rk295/bright-mqtt-exporter/brightmqtt"
 )
 
 const (
@@ -133,7 +135,7 @@ func (d Data) newMessage(c mqtt.Client, m mqtt.Message) {
 
 	switch {
 	case strings.HasSuffix(m.Topic(), electricityTopic):
-		t := &BrightElectricitysMsg{}
+		t := &bright.ElectricitysMsg{}
 		if err := json.Unmarshal(m.Payload(), &t); err != nil {
 			log.Error(err)
 			return
@@ -145,7 +147,7 @@ func (d Data) newMessage(c mqtt.Client, m mqtt.Message) {
 		}
 
 	case strings.HasSuffix(m.Topic(), gasTopic):
-		t := &BrightGasMsg{}
+		t := &bright.GasMsg{}
 		if err := json.Unmarshal(m.Payload(), &t); err != nil {
 			log.Error(err)
 			return
@@ -161,7 +163,7 @@ func (d Data) newMessage(c mqtt.Client, m mqtt.Message) {
 
 }
 
-func (d Data) updateGate(m GasMeter, kind string) error {
+func (d Data) updateGate(m bright.GasMeter, kind string) error {
 
 	log.Debugf("mqtt: updating %s with %v", gasMetricName, m.Energy.Import.Cumulative)
 	d.Usage[kind] = float64(m.Energy.Import.Cumulative)
@@ -172,7 +174,7 @@ func (d Data) updateGate(m GasMeter, kind string) error {
 	return nil
 }
 
-func (d Data) updateElectricity(m ElectricityMeter, kind string) error {
+func (d Data) updateElectricity(m bright.ElectricityMeter, kind string) error {
 
 	log.Debugf("mqtt: updating %s with %v", electricityMetricName, m.Power.Value)
 	d.Usage[kind] = float64(m.Power.Value)
