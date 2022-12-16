@@ -21,8 +21,9 @@ const (
 	electricityTopic = "electricitymeter"
 	gasTopic         = "gasmeter"
 
-	electricityMetricName = "electricity"
-	gasMetricName         = "gas"
+	electricityMetricName           = "electricity"
+	electricityCumulativeMetricName = "electricity-cumulative"
+	gasMetricName                   = "gas"
 
 	mqttHostEnv     = "MQTT_HOST"
 	mqttUserEnv     = "MQTT_USER"
@@ -58,6 +59,12 @@ var (
 	electricityUsageDetails = prometheus.NewDesc(
 		prometheus.BuildFQName("uk_riviera", "monitoring", "electricity"),
 		"electricity power usage readings from the smart meter in kWh",
+		[]string{}, nil,
+	)
+
+	electricityCumulativeDetails = prometheus.NewDesc(
+		prometheus.BuildFQName("uk_riviera", "monitoring", "electricitycumulative"),
+		"cumulative electricity usage from the smart meter in kWh",
 		[]string{}, nil,
 	)
 
@@ -153,7 +160,7 @@ func (d Data) newMessage(c mqtt.Client, m mqtt.Message) {
 			return
 		}
 
-		err := d.updateGate(t.Gasmeter, gasMetricName)
+		err := d.updateGas(t.Gasmeter, gasMetricName)
 		if err != nil {
 			log.Error(err)
 		}
@@ -163,9 +170,12 @@ func (d Data) newMessage(c mqtt.Client, m mqtt.Message) {
 
 }
 
-func (d Data) updateGate(m bright.GasMeter, kind string) error {
+func (d Data) updateGas(m bright.GasMeter, kind string) error {
 
 	log.Debugf("mqtt: updating %s with %v", gasMetricName, m.Energy.Import.Cumulative)
+	log.Debugf("mqtt: updating unit rate %s with %v", kind, m.Energy.Import.Price.Unitrate)
+	log.Debugf("mqtt: updating standing charge %s with %v", kind, m.Energy.Import.Price.StandingCharge)
+
 	d.Usage[kind] = float64(m.Energy.Import.Cumulative)
 
 	d.UnitRate[kind] = m.Energy.Import.Price.Unitrate             // Unit rate update
@@ -177,7 +187,12 @@ func (d Data) updateGate(m bright.GasMeter, kind string) error {
 func (d Data) updateElectricity(m bright.ElectricityMeter, kind string) error {
 
 	log.Debugf("mqtt: updating %s with %v", electricityMetricName, m.Power.Value)
+	log.Debugf("mqtt: updating %s with %v", electricityCumulativeMetricName, m.Energy.Import.Cumulative)
+	log.Debugf("mqtt: updating unit rate %s with %v", kind, m.Energy.Import.Price.Unitrate)
+	log.Debugf("mqtt: updating standing charge %s with %v", kind, m.Energy.Import.Price.StandingCharge)
+
 	d.Usage[kind] = float64(m.Power.Value)
+	d.Usage[electricityCumulativeMetricName] = float64(m.Energy.Import.Cumulative)
 
 	d.UnitRate[kind] = m.Energy.Import.Price.Unitrate             // Unit rate update
 	d.StandingCharge[kind] = m.Energy.Import.Price.StandingCharge // Standing charge update
@@ -194,6 +209,13 @@ func (d Data) Collect(ch chan<- prometheus.Metric) {
 		electricityUsageDetails,
 		prometheus.GaugeValue,
 		d.Usage[electricityMetricName],
+		[]string{}...,
+	)
+
+	ch <- prometheus.MustNewConstMetric(
+		electricityCumulativeDetails,
+		prometheus.CounterValue,
+		d.Usage[electricityCumulativeMetricName],
 		[]string{}...,
 	)
 
